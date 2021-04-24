@@ -1,0 +1,466 @@
+#+TITLE: Rust notes
+#+AUTHOR: Dhananjay
+
+* Getting started
+** Project management
+#+begin_src bash
+cargo new hello_world --bin
+#+end_src
+* print-ing
+Printing is handled by a series of macros defined in `std::fmt`.
+- format!  : write formatted text to String
+- print!   : same as format! but the text is printed to the console (io::stdout).
+- println! : same as print! but a newline is appended.
+- eprint!  : same as format! but the text is printed to the standard error (io::stderr).
+- eprintln!: same as eprint!but a newline is appended.
+
+** println!
+ #+begin_src rust
+// There are various optional patterns this works with. Positional
+// arguments can be used.
+println!("{0}, this is {1}. {1}, this is {0}", "Alice", "Bob");
+
+// As can named arguments.
+println!("{subject} {verb} {object}",
+        object="the lazy dog",
+        subject="the quick brown fox",
+        verb="jumps over");
+// You can right-align text with a specified width. This will output
+// "     1". 5 white spaces and a "1".
+println!("{number:>width$}", number=1, width=6);
+// You can pad numbers with extra zeroes. This will output "000001".
+println!("{number:>0width$}", number=1, width=6);
+// Printing dprecision
+let pi = 3.141592;
+println!("Value of pi is {0:.2}", pi);
+ #+end_src
+** Debug
+#+begin_src rust
+// Derive the `fmt::Debug` implementation for `Structure`. `Structure`
+// is a structure which contains a single `i32`.
+#[derive(Debug)]
+struct Structure(i32);
+// `Structure` is printable!
+// Printing with `{:?}` is similar to with `{}`.
+println!("Now {:?} will print!", Structure(3));
+#+end_src
+** Pretty printing
+#+begin_src rust
+#[derive(Debug)]
+struct Person<'a> {
+    name: &'a str,
+    age: u8
+}
+fn main() {
+    let name = "Peter";
+    let age = 27;
+    let peter = Person { name, age };
+
+    // Pretty print
+    println!("{:#?}", peter);
+}
+#+end_src
+** Display
+fmt::Display is not implemented for Vec<T> or for any other generic containers. fmt::Debug must then be used for these generic cases.
+#+begin_src rust
+#![allow(unused)]
+fn main() {
+    // Import (via `use`) the `fmt` module to make it available.
+    use std::fmt;
+
+    // Define a structure for which `fmt::Display` will be implemented. This is
+    // a tuple struct named `Structure` that contains an `i32`.
+    struct Structure(i32);
+
+    // To use the `{}` marker, the trait `fmt::Display` must be implemented
+    // manually for the type.
+    impl fmt::Display for Structure {
+        // This trait requires `fmt` with this exact signature.
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            // Write strictly the first element into the supplied output
+            // stream: `f`. Returns `fmt::Result` which indicates whether the
+            // operation succeeded or failed. Note that `write!` uses syntax which
+            // is very similar to `println!`.
+            write!(f, "{}", self.0)
+        }
+    }
+}
+#+end_src
+* Data types
+** Scalar Types
+signed integers: i8, i16, i32, i64, i128 and isize (pointer size)
+unsigned integers: u8, u16, u32, u64, u128 and usize (pointer size)
+floating point: f32, f64
+char Unicode scalar values like 'a', 'α' and '∞' (4 bytes each)
+bool either true or false
+and the unit type (), whose only possible value is an empty tuple: ()
+** Compound Types
+arrays like [1, 2, 3]
+tuples like (1, true)
+** Examples
+#+begin_src rust
+fn main() {
+    // Variables can be type annotated.
+    let logical: bool = true;
+
+    let a_float: f64 = 1.0;  // Regular annotation
+    let an_integer   = 5i32; // Suffix annotation
+
+    // Or a default will be used.
+    let default_float   = 3.0; // `f64`
+    let default_integer = 7;   // `i32`
+
+    // A type can also be inferred from context
+    let mut inferred_type = 12; // Type i64 is inferred from another line
+    inferred_type = 4294967296i64;
+
+    // A mutable variable's value can be changed.
+    let mut mutable = 12; // Mutable `i32`
+    mutable = 21;
+
+    // Error! The type of a variable can't be changed.
+    mutable = true;
+
+    // Variables can be overwritten with shadowing.
+    let mutable = true;
+}
+#+end_src
+** Literals
+Integers 1, floats 1.2, characters 'a', strings "abc", booleans true and the unit type () can be expressed using literals.
+Integers can, alternatively, be expressed using hexadecimal, octal or binary notation using these prefixes respectively: 0x, 0o or 0b.
+Underscores can be inserted in numeric literals to improve readability, e.g. 1_000 is the same as 1000, and 0.000_001 is the same as 0.000001.
+#+begin_src rust
+fn main() {
+    // Integer addition
+    println!("1 + 2 = {}", 1u32 + 2);
+
+    // Integer subtraction
+    println!("1 - 2 = {}", 1u32 - 2);
+    // TODO ^ Try changing `1i32` to `1u32` to see why the type is important
+
+    // Short-circuiting boolean logic
+    println!("true AND false is {}", true && false);
+    println!("true OR false is {}", true || false);
+    println!("NOT true is {}", !true);
+
+    // Bitwise operations
+    println!("0011 AND 0101 is {:04b}", 0b0011u32 & 0b0101);
+    println!("0011 OR 0101 is {:04b}", 0b0011u32 | 0b0101);
+    println!("0011 XOR 0101 is {:04b}", 0b0011u32 ^ 0b0101);
+    println!("1 << 5 is {}", 1u32 << 5);
+    println!("0x80 >> 2 is 0x{:x}", 0x80u32 >> 2);
+
+    // Use underscores to improve readability!
+    println!("One million is written as {}", 1_000_000u32);
+}
+#+end_src
+** Arrays and Slices
+- arrays can be compared with ~==~
+- 2D array - ~let mtx[[f32; 3]; 2]~
+
+#+begin_src rust
+use std::mem;
+
+// This function borrows a slice
+fn analyze_slice(slice: &[i32]) {
+    println!("first element of the slice: {}", slice[0]);
+    println!("the slice has {} elements", slice.len());
+}
+
+fn main() {
+    // Fixed-size array (type signature is superfluous)
+    let xs: [i32; 5] = [1, 2, 3, 4, 5];
+
+    // All elements can be initialized to the same value
+    let ys: [i32; 500] = [0; 500];
+
+    // Indexing starts at 0
+    println!("first element of the array: {}", xs[0]);
+
+    // `len` returns the count of elements in the array
+    println!("number of elements in array: {}", xs.len());
+
+    // Arrays are stack allocated
+    println!("array occupies {} bytes", mem::size_of_val(&xs));
+
+    // Arrays can be automatically borrowed as slices
+    println!("borrow the whole array as a slice");
+    analyze_slice(&xs);
+
+    // Slices can point to a section of an array
+    // They are of the form [starting_index..ending_index]
+    // starting_index is the first position in the slice
+    // ending_index is one more than the last position in the slice
+    println!("borrow a section of the array as a slice");
+    analyze_slice(&ys[1 .. 4]);
+
+    // Out of bound indexing causes compile error
+    println!("{}", xs[5]);
+}
+#+end_src
+** Structures
+There are three types of structures ("structs") that can be created using the struct keyword:
+1. Tuple structs, which are, basically, named tuples.
+2. The classic C structs
+3. Unit structs, which are field-less, are useful for generics.
+#+begin_src rust
+#[derive(Debug)]
+struct Person {
+    name: String,
+    age: u8,
+}
+
+// A unit struct
+struct Unit;
+
+// A tuple struct
+struct Pair(i32, f32);
+
+// A struct with two fields
+struct Point {
+    x: f32,
+    y: f32,
+}
+
+// Structs can be reused as fields of another struct
+#[allow(dead_code)]
+struct Rectangle {
+    // A rectangle can be specified by where the top left and bottom right
+    // corners are in space.
+    top_left: Point,
+    bottom_right: Point,
+}
+#+end_src
+** Enums
+#+begin_src rust
+enum WebEvent {
+    // An `enum` may either be `unit-like`,
+    PageLoad,
+    PageUnload,
+    // like tuple structs,
+    KeyPress(char),
+    Paste(String),
+    // or c-like structures.
+    Click { x: i64, y: i64 },
+}
+fn inspect(event: WebEvent) {
+    match event {
+        WebEvent::PageLoad => println!("page loaded"),
+        WebEvent::PageUnload => println!("page unloaded"),
+        // Destructure `c` from inside the `enum`.
+        WebEvent::KeyPress(c) => println!("pressed '{}'.", c),
+        WebEvent::Paste(s) => println!("pasted \"{}\".", s),
+        // Destructure `Click` into `x` and `y`.
+        WebEvent::Click { x, y } => {
+            println!("clicked at x={}, y={}.", x, y);
+        },
+    }
+}
+fn main() {
+    let pressed = WebEvent::KeyPress('x');
+    // `to_owned()` creates an owned `String` from a string slice.
+    let pasted  = WebEvent::Paste("my text".to_owned());
+    let click   = WebEvent::Click { x: 20, y: 80 };
+    let load    = WebEvent::PageLoad;
+    let unload  = WebEvent::PageUnload;
+
+    inspect(pressed);
+    inspect(pasted);
+    inspect(click);
+    inspect(load);
+    inspect(unload);
+}
+
+#+end_src
+*** Type aliases
+#+begin_src rust
+enum VeryVerboseEnumOfThingsToDoWithNumbers {
+    Add,
+    Subtract,
+}
+
+// Creates a type alias
+type Operations = VeryVerboseEnumOfThingsToDoWithNumbers;
+
+fn main() {
+    // We can refer to each variant via its alias, not its long and inconvenient
+    // name.
+    let x = Operations::Add;
+}
+#+end_src
+
+#+begin_src rust
+enum VeryVerboseEnumOfThingsToDoWithNumbers {
+    Add,
+    Subtract,
+}
+
+impl VeryVerboseEnumOfThingsToDoWithNumbers {
+    fn run(&self, x: i32, y: i32) -> i32 {
+        match self {
+            Self::Add => x + y,
+            Self::Subtract => x - y,
+        }
+    }
+}
+#+end_src
+*** use
+#+begin_src rust
+// An attribute to hide warnings for unused code.
+#![allow(dead_code)]
+
+enum Status {
+    Rich,
+    Poor,
+}
+
+enum Work {
+    Civilian,
+    Soldier,
+}
+
+fn main() {
+    // Explicitly `use` each name so they are available without
+    // manual scoping.
+    use crate::Status::{Poor, Rich};
+    // Automatically `use` each name inside `Work`.
+    use crate::Work::*;
+
+    // Equivalent to `Status::Poor`.
+    let status = Poor;
+    // Equivalent to `Work::Civilian`.
+    let work = Civilian;
+
+    match status {
+        // Note the lack of scoping because of the explicit `use` above.
+        Rich => println!("The rich have lots of money!"),
+        Poor => println!("The poor have no money..."),
+    }
+
+    match work {
+        // Note again the lack of scoping.
+        Civilian => println!("Civilians work!"),
+        Soldier  => println!("Soldiers fight!"),
+    }
+}
+#+end_src
+*** C like
+#+begin_src rust
+// An attribute to hide warnings for unused code.
+#![allow(dead_code)]
+
+// enum with implicit discriminator (starts at 0)
+enum Number {
+    Zero,
+    One,
+    Two,
+}
+
+// enum with explicit discriminator
+enum Color {
+    Red = 0xff0000,
+    Green = 0x00ff00,
+    Blue = 0x0000ff,
+}
+
+fn main() {
+    // `enums` can be cast as integers.
+    println!("zero is {}", Number::Zero as i32);
+    println!("one is {}", Number::One as i32);
+
+    println!("roses are #{:06x}", Color::Red as i32);
+    println!("violets are #{:06x}", Color::Blue as i32);
+}
+#+end_src
+** Vectors
+*** Declaration: ~let mut v = vec::new();~
+#+begin_src rust
+let mut v = vec::new();
+v.push(1); // add a value
+let last = v.pop(); //   removes last elem from vec and returns as option type
+#+end_src
+
+*** Index type: ~let idx:usize = 0;~
+#+begin_src rust
+let idx:usize = 0;
+println!({}, v[idx]);
+#+end_src
+
+*** Get method: returns ~option~
+#+begin_src rust
+match v.get(6){
+    Some(x) => println!("Success");
+    None => println!("Index out of bounds");
+}
+#+end_src
+
+*** Iterate:
+#+begin_src rust
+for val in &v {
+    println!("{}", val);
+}
+#+end_src
+#+begin_src rust
+while let Some(x) = v.pop(){
+    println!("{}", x);
+}
+
+#+end_src
+** Slices (from video tut)
+- it is a part of array/vec.
+*** Using it in func
+#+begin_src rust
+fn use_slice(slice: &mut [i32]){
+    println!("{}", slice.len());
+    slice[0] = 42;
+}
+fn main(){
+    let mut a = [1,2,3,4,5];
+    use_slice(&mut a[1..4]); // in py it will be a[1,4]
+    println!({:?}, a); // 2nd elem will bee 42
+}
+
+#+end_src
+** Strings
+*** ~&str~
+Very inflexible object
+
+#+begin_src rust
+let s = "Hello";
+// using type
+let d:&'static str = "hello";
+// iteration
+for c in s.chars().rev(){
+    println!("{}", c);
+}
+// geting nth char
+if let Some(x) = s.chars().nth(0) {
+    println!("{}", x);
+}
+#+end_src
+
+*** ~String~
+heap allocated construct
+#+begin_src rust
+let mut letters = String::new();
+let mut a = 'a' as u8;
+while a <= ('z' as u8){
+    letters.push(a as char);
+    letters.push_str(";");
+    a += 1;
+}
+#+end_src
+
+*** Conversion
+#+begin_src rust
+let u:&str = &letters; // from String to &str
+let mut abc = String::from("abs"); // from &str to String
+let mut aaa = "hello".to_string(); // from &str to String
+aaa.remove(0);
+#+end_src
+
+*** Concat
+#+begin_src rust
+let z = letters + "bca";
+let y = letters + &letters;
+#+end_src
