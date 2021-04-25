@@ -97,7 +97,7 @@ and the unit type (), whose only possible value is an empty tuple: ()
 ** Compound Types
 arrays like [1, 2, 3]
 tuples like (1, true)
-** Examples
+*** Examples
 #+begin_src rust
 fn main() {
     // Variables can be type annotated.
@@ -463,4 +463,127 @@ aaa.remove(0);
 #+begin_src rust
 let z = letters + "bca";
 let y = letters + &letters;
+#+end_src
+** Tuples
+- they don't all have to be of same type
+- tuple of tuples are possible
+
+#+begin_src rust
+let t = (1, 2);
+let one = t.0;
+let two = t.1;
+//destructuring
+let (a, b) = t;
+//combineed
+let t2 = (5, 6);
+let combined = (t, t2);
+let q = (combined.1).1; // brackets are required
+let ((c,d), (e,f)) = combined;
+#+end_src
+
+** Pattern Matcing
+#+begin_src rust
+fn how_many(x) -> &'static str {
+    match x {
+        0 => "no",
+        1 | 2 => "less than 3",
+        z @ 9...11 => "lots",
+        12 => "dozen",
+        _ if(x%2==0) => "some",
+        _ => "few"
+    }
+}
+let point = (3,4);
+match point {
+    (0,0) => println!("It's origin"),
+    (0, y) => println!("It's on y-axis"),
+    (x, 0) => println!("It's on x-axis"),
+    (x, y) => println!("meh")
+}
+#+end_src
+
+** Generics
+- more than one types can be provided ~Point<T, V>~
+
+#+begin_src rust
+struct Point<T> {
+    x: T,
+    y: T
+}
+
+fn generics() {
+    let a:Point<i32> = Point{x:0, y:0};
+    let b:Point<f64> = Point{x:1.1, y:2.9};
+}
+
+#+end_src
+
+* Functions
+** Funcs and Args
+- Simple function
+#+begin_src rust
+fn print_val(x:i32){
+    println!("{}", x);
+}
+#+end_src
+
+- mutable reference
+#+begin_src rust
+fn increase(x: &mut i32){
+    *x +=1; // dereference with *
+}
+let mut z = 1;
+increase(&mut z);
+#+end_src
+
+- return type
+#+begin_src rust
+fn product(x:i32, y:i32) -> i32 {
+    x*y // Do not put ; at the end for return value
+}
+#+end_src
+
+** Methods
+Implemetation of func for a struct
+
+#+begin_src rust
+impl Line{
+    fn len(&self) -> f64{
+        let dx = self.start.x - self.end.x;
+        let dy = self.start.y - self.end.y;
+        (dx*dx + dy*dy).sqrt();
+    }
+}
+
+let len = myline.len();
+#+end_src
+
+** Closures
+- one line function (not same as lambda func)
+#+begin_src rust
+fn closures(){
+    let plus_one = |x:i32| -> i32 {x + 1};
+    let a = 6;
+    println!("{}", plus_one(a));
+
+    let mut two = 2;
+    {
+        let plus_two = |x|{
+            let mut z = x;
+            z += two;
+            z
+        };
+        println!("{}", plus_two(3));
+    }
+    let q = &mut two;
+
+    // T: by value
+    // T&
+    // &mut
+    let plus_three = |x:&mut i32| *x += 3;
+    let mut f = 12;
+    plus_three(&mut f);
+    println!("{}", f);
+
+}
 #+end_src
