@@ -28,9 +28,9 @@ impl Config {
             query = args[1].clone();
             filename = args[2].clone();
             case_sensitive = if args[3].to_string() != 0.to_string() {
-                true
-            }else {
                 false
+            }else {
+                true
             };
         }
 

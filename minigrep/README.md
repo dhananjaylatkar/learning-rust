@@ -14,7 +14,7 @@ $ minigrep <string_to_search> <file_location>
 ```
 * Case insensitive argument can be passed through CLI as well.
 
-`0` for case-insensitive and `1` for case-sensitive
+`0` for case-sensitive and `1` for case-insensitive
 ```
-$ minigrep <string_to_search> <file_location> 1
+$ minigrep <string_to_search> <file_location>
 ```
