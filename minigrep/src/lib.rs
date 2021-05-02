@@ -13,10 +13,26 @@ impl Config {
         if args.len() < 3 {
             return Err("not enough arguments");
         }
-
-        let query = args[1].clone();
-        let filename = args[2].clone();
-        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
+        else if args.len() > 4 {
+            return Err("too may arguments");
+        }
+        let query;
+        let filename;
+        let case_sensitive;
+        if args.len() == 3 {
+            query = args[1].clone();
+            filename = args[2].clone();
+            case_sensitive = env::var("CASE_INSENSITIVE").is_err();
+        }
+        else {
+            query = args[1].clone();
+            filename = args[2].clone();
+            case_sensitive = if args[3].to_string() != 0.to_string() {
+                true
+            }else {
+                false
+            };
+        }
 
         Ok(Config {query, filename, case_sensitive})
     }
